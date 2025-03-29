@@ -1,6 +1,62 @@
 let highestZ = 1;
 let papersInteracted = 0;
 const totalPapersToInteract = 6; // Adjust this number based on how many papers need to be dragged before proposal
+let isMusicPlaying = false;
+
+// Music control functionality
+document.addEventListener('DOMContentLoaded', () => {
+  const backgroundMusic = document.getElementById('background-music');
+  const musicToggle = document.getElementById('music-toggle');
+  
+  // Set initial volume (can be adjusted as needed)
+  backgroundMusic.volume = 0.7;
+  
+  // Function to forcefully try to play music
+  const forcePlayMusic = () => {
+    // Try to play music
+    backgroundMusic.play()
+      .then(() => {
+        // Playback started successfully
+        musicToggle.textContent = '🔊';
+        isMusicPlaying = true;
+      })
+      .catch(error => {
+        // Auto-play was prevented
+        console.log("Autoplay prevented, will retry on interaction: ", error);
+      });
+  };
+  
+  // Try to play immediately
+  forcePlayMusic();
+  
+  // Setup event listeners to try playing on any user interaction
+  const startMusicOnInteraction = () => {
+    if (!isMusicPlaying) {
+      forcePlayMusic();
+    }
+  };
+  
+  // Try to play music on various user interactions
+  document.addEventListener('click', startMusicOnInteraction, { once: false });
+  document.addEventListener('touchstart', startMusicOnInteraction, { once: false });
+  document.addEventListener('keydown', startMusicOnInteraction, { once: false });
+  document.addEventListener('scroll', startMusicOnInteraction, { once: false });
+  
+  // Add click event to music toggle button
+  musicToggle.addEventListener('click', () => {
+    if (isMusicPlaying) {
+      backgroundMusic.pause();
+      musicToggle.textContent = '🔇';
+      isMusicPlaying = false;
+    } else {
+      backgroundMusic.play()
+        .then(() => {
+          musicToggle.textContent = '🔊';
+          isMusicPlaying = true;
+        });
+    }
+  });
+});
 
 class Paper {
   holdingPaper = false;
@@ -224,6 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const yesButton = document.getElementById('yesButton');
   const noButton = document.getElementById('noButton');
   const successMessage = document.getElementById('success-message');
+  const backgroundMusic = document.getElementById('background-music');
   
   // Make the No button avoid the mouse
   noButton.addEventListener('mouseover', (e) => {
@@ -242,12 +299,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (buttonRect.left + x < 0) newX = Math.abs(x);
     if (buttonRect.bottom + y > windowHeight) newY = -Math.abs(y);
     if (buttonRect.top + y < 0) newY = Math.abs(y);
-    
+      
     noButton.style.transform = `translate(${newX}px, ${newY}px)`;
   });
   
   // When Yes button is clicked
   yesButton.addEventListener('click', () => {
+    // Make sure music is playing for this special moment
+    if (!isMusicPlaying && backgroundMusic) {
+      backgroundMusic.play()
+        .then(() => {
+          isMusicPlaying = true;
+          document.getElementById('music-toggle').textContent = '🔊';
+        })
+        .catch(err => console.log("Can't play audio on yes click: ", err));
+    }
+    
     // Create confetti explosion
     const confettiCanvas = document.getElementById('confetti-canvas');
     const myConfetti = confetti.create(confettiCanvas, {
